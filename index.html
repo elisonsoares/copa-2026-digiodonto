@@ -108,9 +108,9 @@
   .pts{font-weight:800; color:var(--cyan)}
 
   .matches{padding:6px 10px 12px}
-  .mrow{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:6px;
-    padding:8px 4px; border-bottom:1px solid rgba(37,38,48,.55)}
-  .mrow:last-child{border-bottom:none}
+  .game{border-bottom:1px solid rgba(37,38,48,.55)}
+  .game:last-child{border-bottom:none}
+  .mrow{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:6px; padding:8px 4px}
   .mdate{grid-column:1/-1; font-size:10.5px; color:var(--cyan-dark); letter-spacing:.6px; margin-top:8px;
     text-transform:uppercase; font-weight:600}
   .team{display:flex; align-items:center; gap:5px; font-size:13px; font-weight:600}
@@ -120,6 +120,21 @@
     background:var(--dark-1); border:1px solid var(--dark-4); border-radius:var(--radius-xs); color:var(--white)}
   .score input:focus{outline:none; border-color:var(--cyan); box-shadow:0 0 0 2px rgba(92,224,210,.25)}
   .score span{color:var(--gray)}
+  /* Resultado real (ESPN) + comparação */
+  .toolbar .stamp{font-size:11px; color:var(--gray); margin-right:auto; align-self:center}
+  .realline{display:flex; gap:7px; justify-content:center; align-items:center; flex-wrap:wrap; padding:0 0 8px; font-size:11px}
+  .realline .rlabel{color:var(--gray); text-transform:uppercase; letter-spacing:.5px; font-size:9px}
+  .realline .rscore{font-weight:800; color:#fff}
+  .realline .rx{color:var(--gray); margin:0 3px; font-weight:400}
+  .kmatch .realline{padding:5px 0 0; border-top:1px solid var(--dark-4); margin-top:3px}
+  .chip{font-size:9px; padding:2px 8px; border-radius:50px; font-weight:700; display:inline-flex; align-items:center; gap:4px; text-transform:uppercase; letter-spacing:.3px}
+  .chip.live{background:rgba(255,75,75,.16); color:#ff8e8e}
+  .chip.live .dot{width:6px; height:6px; border-radius:50%; background:#ff5a5a; animation:pulse 1.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .chip.fim{background:rgba(92,224,210,.16); color:var(--cyan-light)}
+  .chip.ok{background:rgba(92,224,210,.3); color:#cffff8}
+  .chip.meio{background:rgba(61,126,120,.42); color:#d6f2ee}
+  .chip.erro{background:rgba(138,139,149,.18); color:var(--gray-light)}
 
   /* 3º COLOCADOS */
   .third-wrap{background:var(--dark-3); border:1px solid var(--dark-4); border-radius:var(--radius);
@@ -190,6 +205,8 @@
 
 <main>
   <div class="toolbar">
+    <span class="stamp" id="real-stamp">resultados reais via ESPN</span>
+    <button class="btn primary" id="btn-refresh"><i data-lucide="refresh-cw"></i> Atualizar resultados</button>
     <button class="btn" id="btn-export"><i data-lucide="download"></i> Exportar</button>
     <button class="btn" id="btn-import"><i data-lucide="upload"></i> Importar</button>
     <button class="btn danger" id="btn-reset"><i data-lucide="trash-2"></i> Limpar tudo</button>
@@ -419,7 +436,7 @@ function renderGroups(){
       const s=gScore(m[0]);
       const key=m[1]+"|"+m[2];
       if(key!==lastKey){ html+=`<div class="mdate">${m[1]} · ${m[2]}</div>`; lastKey=key; }
-      html+=`<div class="mrow">
+      html+=`<div class="game"><div class="mrow">
         <div class="team home">${T[m[4]].n} <span class="flag">${T[m[4]].f}</span></div>
         <div class="score">
           <input type="number" min="0" inputmode="numeric" data-g="${m[0]}" data-s="h" value="${s.h}">
@@ -427,7 +444,7 @@ function renderGroups(){
           <input type="number" min="0" inputmode="numeric" data-g="${m[0]}" data-s="a" value="${s.a}">
         </div>
         <div class="team"><span class="flag">${T[m[5]].f}</span> ${T[m[5]].n}</div>
-      </div>`;
+      </div>${realLineHTML(m[4],m[5],s)}</div>`;
     });
     html+=`</div></div>`;
   }
@@ -486,10 +503,12 @@ function sideHTML(m,ref,which){
   </div>`;
 }
 function matchHTML(m){
+  const hc=resolveRef(m.h), ac=resolveRef(m.a);
   return `<div class="kmatch">
     <div class="kdate"><span>Jogo ${m.id}</span><span>${m.d}${m.t?" · "+m.t:""}</span></div>
     ${sideHTML(m,m.h,"h")}
     ${sideHTML(m,m.a,"a")}
+    ${realLineHTML(hc,ac,kRes(m.id))}
   </div>`;
 }
 function colHTML(title,list){
@@ -559,9 +578,64 @@ document.getElementById("btn-import").addEventListener("click",()=>{
   i.click();
 });
 
+/* ============ RESULTADOS REAIS (API pública da ESPN) ============ */
+const ESPN_URL="https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719";
+const ESPN_MAP={GER:"ALE",KOR:"COR"}; // siglas que diferem da nossa tabela
+const mapCode=ab=>{ab=(ab||"").toUpperCase();return ESPN_MAP[ab]||ab;};
+let REAL={}; let lastUpdate=null;
+function isEditing(){const el=document.activeElement;return !!(el&&el.tagName==="INPUT"&&(("g"in el.dataset)||("k"in el.dataset)));}
+function updateStamp(txt){
+  const s=document.getElementById("real-stamp"); if(!s)return;
+  if(txt){ s.textContent=txt; return; }
+  if(!lastUpdate)return;
+  const hh=String(lastUpdate.getHours()).padStart(2,"0"), mm=String(lastUpdate.getMinutes()).padStart(2,"0");
+  s.textContent="resultados reais (ESPN) · atualizado "+hh+":"+mm;
+}
+async function fetchReal(){
+  if(!lastUpdate) updateStamp("buscando resultados…");
+  try{
+    const res=await fetch(ESPN_URL,{cache:"no-store"});
+    const d=await res.json();
+    const map={};
+    (d.events||[]).forEach(e=>{
+      const cs=(e.competitions&&e.competitions[0]&&e.competitions[0].competitors)||[];
+      const h=cs.find(x=>x.homeAway==="home"), a=cs.find(x=>x.homeAway==="away");
+      if(!h||!a)return;
+      const hc=mapCode(h.team.abbreviation), ac=mapCode(a.team.abbreviation);
+      const t=(e.status&&e.status.type)||{};
+      map[[hc,ac].sort().join("|")]={hc,ac,hs:h.score,as:a.score,st:t.state,det:t.shortDetail||t.detail||""};
+    });
+    REAL=map; lastUpdate=new Date();
+    if(!isEditing()){ renderGroups(); renderThirds(); renderBracket(); }
+    updateStamp();
+  }catch(err){ console.warn("ESPN:",err); if(!lastUpdate) updateStamp("resultados indisponíveis no momento"); }
+}
+function realFor(hc,ac){
+  if(!hc||!ac)return null;
+  const r=REAL[[hc,ac].sort().join("|")]; if(!r)return null;
+  return r.hc===hc?{hs:r.hs,as:r.as,st:r.st,det:r.det}:{hs:r.as,as:r.hs,st:r.st,det:r.det};
+}
+function realLineHTML(hc,ac,pal){
+  const r=realFor(hc,ac); if(!r||r.st==="pre")return "";
+  const sc=`${r.hs}<span class="rx">×</span>${r.as}`;
+  const chip = r.st==="in"
+    ? `<span class="chip live"><span class="dot"></span>AO VIVO${r.det?" · "+r.det:""}</span>`
+    : `<span class="chip fim">Encerrado</span>`;
+  let acc="";
+  if(r.st==="post" && pal && pal.h!=="" && pal.a!=="" && pal.h!=null && pal.a!=null){
+    if(+pal.h===+r.hs && +pal.a===+r.as) acc=`<span class="chip ok">✔ Cravou!</span>`;
+    else if(Math.sign(+pal.h-+pal.a)===Math.sign(+r.hs-+r.as)) acc=`<span class="chip meio">Acertou o resultado</span>`;
+    else acc=`<span class="chip erro">Errou</span>`;
+  }
+  return `<div class="realline"><span class="rlabel">Real</span><span class="rscore">${sc}</span>${chip}${acc}</div>`;
+}
+
 /* ====================== INIT ====================== */
 renderGroups(); renderThirds(); renderBracket();
 if(window.lucide) lucide.createIcons();
+fetchReal();
+setInterval(fetchReal, 60000);
+document.getElementById("btn-refresh").addEventListener("click",fetchReal);
 </script>
 </body>
 </html>
