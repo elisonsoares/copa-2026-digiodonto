@@ -135,6 +135,11 @@
   .chip.ok{background:rgba(92,224,210,.3); color:#cffff8}
   .chip.meio{background:rgba(61,126,120,.42); color:#d6f2ee}
   .chip.erro{background:rgba(138,139,149,.18); color:var(--gray-light)}
+  .score input:disabled, .kside input:disabled{opacity:.5; cursor:not-allowed; background:#141519}
+  .lockmsg{display:block; text-align:center; font-size:9px; color:var(--gray); letter-spacing:.4px; padding:0 0 6px}
+  .kside.locked{cursor:default}
+  .kside.locked:hover{background:transparent}
+  .kside.locked.win:hover{background:rgba(92,224,210,.16)}
 
   /* 3º COLOCADOS */
   .third-wrap{background:var(--dark-3); border:1px solid var(--dark-4); border-radius:var(--radius);
@@ -353,11 +358,18 @@ function gScore(id){ return S.g[id]||{h:"",a:""}; }
 function kRes(id){ return S.k[id]||{h:"",a:"",w:null}; }
 
 /* ====================== CLASSIFICAÇÃO ====================== */
+// Placar efetivo de um jogo de grupo: usa o RESULTADO REAL se o jogo já terminou,
+// senão usa o palpite do usuário (projeção). Mantém o palpite intacto para comparação.
+function effScore(m){
+  const r=realFor(m[4],m[5]);
+  if(r && r.st==="post") return {h:String(r.hs), a:String(r.as)};
+  return gScore(m[0]);
+}
 function computeGroup(letter){
   const teams = GROUPS[letter];
   const st = {}; teams.forEach(t=>st[t]={t,P:0,V:0,E:0,D:0,GP:0,GC:0,SG:0,Pts:0});
   GM.filter(m=>m[3]===letter).forEach(m=>{
-    const s=gScore(m[0]); if(s.h===""||s.a==="")return;
+    const s=effScore(m); if(s.h===""||s.a==="")return;
     const h=+s.h,a=+s.a, H=st[m[4]],A=st[m[5]];
     H.P++;A.P++; H.GP+=h;H.GC+=a; A.GP+=a;A.GC+=h;
     if(h>a){H.V++;A.D++;H.Pts+=3} else if(h<a){A.V++;H.D++;A.Pts+=3} else {H.E++;A.E++;H.Pts++;A.Pts++}
@@ -366,7 +378,7 @@ function computeGroup(letter){
   arr.sort((x,y)=> y.Pts-x.Pts || y.SG-x.SG || y.GP-x.GP || teams.indexOf(x.t)-teams.indexOf(y.t));
   return arr;
 }
-function groupComplete(letter){ return GM.filter(m=>m[3]===letter).every(m=>{const s=gScore(m[0]);return s.h!==""&&s.a!==""}); }
+function groupComplete(letter){ return GM.filter(m=>m[3]===letter).every(m=>{const s=effScore(m);return s.h!==""&&s.a!==""}); }
 
 // Ranking dos 12 terceiros
 function thirdRanking(){
@@ -412,10 +424,18 @@ function resolveRef(ref){
   return null;
 }
 const ALLKO = {}; [...R32,...R16,...QF,...SF,TP,FINAL].forEach(m=>ALLKO[m.id]=m);
-function koWinner(id){ const m=ALLKO[id],r=kRes(id); if(!r.w)return null;
-  return r.w==="h"?resolveRef(m.h):resolveRef(m.a); }
-function koLoser(id){ const m=ALLKO[id],r=kRes(id); if(!r.w)return null;
-  return r.w==="h"?resolveRef(m.a):resolveRef(m.h); }
+// Vencedor pelo resultado REAL (quando o jogo terminou); empate vai a pênaltis (shootout).
+function koSideReal(id){
+  const m=ALLKO[id]; const r=realFor(resolveRef(m.h),resolveRef(m.a));
+  if(!r||r.st!=="post")return null;
+  if(+r.hs!==+r.as) return +r.hs>+r.as?"h":"a";
+  if(r.sh!=null&&r.sa!=null&&+r.sh!==+r.sa) return +r.sh>+r.sa?"h":"a";
+  return null;
+}
+function koWinner(id){ const m=ALLKO[id]; const side=koSideReal(id)||kRes(id).w; if(!side)return null;
+  return side==="h"?resolveRef(m.h):resolveRef(m.a); }
+function koLoser(id){ const m=ALLKO[id]; const side=koSideReal(id)||kRes(id).w; if(!side)return null;
+  return side==="h"?resolveRef(m.a):resolveRef(m.h); }
 
 /* ====================== RENDER GRUPOS ====================== */
 function tCell(code){ const t=T[code]; return `<span class="flag">${t.f}</span>${code}`; }
@@ -434,17 +454,21 @@ function renderGroups(){
     let lastKey="";
     GM.filter(m=>m[3]===g).forEach(m=>{
       const s=gScore(m[0]);
+      const rr=realFor(m[4],m[5]);
+      const locked = !!(rr && (rr.st==="in"||rr.st==="post"));
+      const dis = locked? "disabled" : "";
+      const lk = locked? `<span class="lockmsg" title="Jogo já começou — palpite travado">🔒 palpite travado</span>` : "";
       const key=m[1]+"|"+m[2];
       if(key!==lastKey){ html+=`<div class="mdate">${m[1]} · ${m[2]}</div>`; lastKey=key; }
       html+=`<div class="game"><div class="mrow">
         <div class="team home">${T[m[4]].n} <span class="flag">${T[m[4]].f}</span></div>
         <div class="score">
-          <input type="number" min="0" inputmode="numeric" data-g="${m[0]}" data-s="h" value="${s.h}">
+          <input type="number" min="0" inputmode="numeric" data-g="${m[0]}" data-s="h" value="${s.h}" ${dis}>
           <span>×</span>
-          <input type="number" min="0" inputmode="numeric" data-g="${m[0]}" data-s="a" value="${s.a}">
+          <input type="number" min="0" inputmode="numeric" data-g="${m[0]}" data-s="a" value="${s.a}" ${dis}>
         </div>
         <div class="team"><span class="flag">${T[m[5]].f}</span> ${T[m[5]].n}</div>
-      </div>${realLineHTML(m[4],m[5],s)}</div>`;
+      </div>${lk}${realLineHTML(m[4],m[5],s)}</div>`;
     });
     html+=`</div></div>`;
   }
@@ -496,10 +520,15 @@ function refLabel(ref){
 }
 function sideHTML(m,ref,which){
   const code=resolveRef(ref); const r=kRes(m.id);
-  const isWin = r.w===which;
-  return `<div class="kside ${isWin?'win':''}" data-k="${m.id}" data-w="${which}">
+  const rr=realFor(resolveRef(m.h),resolveRef(m.a));
+  const locked=!!(rr&&(rr.st==="in"||rr.st==="post"));
+  const winSide=(rr&&rr.st==="post")?koSideReal(m.id):r.w; // destaca o vencedor real se terminou
+  const isWin=winSide===which;
+  const val=locked?(which==="h"?rr.hs:rr.as):(r[which]||"");
+  const dis=(locked||!code)?"disabled":"";
+  return `<div class="kside ${isWin?'win':''} ${locked?'locked':''}" data-k="${m.id}" data-w="${which}">
     <div class="kt ${code?'':'tbd'}">${code?`<span class="flag">${T[code].f}</span>${code}`:refLabel(ref)}</div>
-    <input type="number" min="0" inputmode="numeric" data-k="${m.id}" data-side="${which}" value="${r[which]||""}" ${code?'':'disabled'}>
+    <input type="number" min="0" inputmode="numeric" data-k="${m.id}" data-side="${which}" value="${val}" ${dis}>
   </div>`;
 }
 function matchHTML(m){
@@ -530,6 +559,7 @@ function renderBracket(){
   b.querySelectorAll(".kside").forEach(el=>{
     el.addEventListener("click",e=>{
       if(e.target.tagName==="INPUT")return;
+      if(el.classList.contains("locked"))return; // jogo já começou: travado
       const id=+el.dataset.k, w=el.dataset.w;
       const m=ALLKO[id];
       if(!resolveRef(m.h)||!resolveRef(m.a))return;
@@ -603,7 +633,7 @@ async function fetchReal(){
       if(!h||!a)return;
       const hc=mapCode(h.team.abbreviation), ac=mapCode(a.team.abbreviation);
       const t=(e.status&&e.status.type)||{};
-      map[[hc,ac].sort().join("|")]={hc,ac,hs:h.score,as:a.score,st:t.state,det:t.shortDetail||t.detail||""};
+      map[[hc,ac].sort().join("|")]={hc,ac,hs:h.score,as:a.score,sh:h.shootoutScore,sa:a.shootoutScore,st:t.state,det:t.shortDetail||t.detail||""};
     });
     REAL=map; lastUpdate=new Date();
     if(!isEditing()){ renderGroups(); renderThirds(); renderBracket(); }
@@ -613,7 +643,7 @@ async function fetchReal(){
 function realFor(hc,ac){
   if(!hc||!ac)return null;
   const r=REAL[[hc,ac].sort().join("|")]; if(!r)return null;
-  return r.hc===hc?{hs:r.hs,as:r.as,st:r.st,det:r.det}:{hs:r.as,as:r.hs,st:r.st,det:r.det};
+  return r.hc===hc?{hs:r.hs,as:r.as,sh:r.sh,sa:r.sa,st:r.st,det:r.det}:{hs:r.as,as:r.hs,sh:r.sa,sa:r.sh,st:r.st,det:r.det};
 }
 function realLineHTML(hc,ac,pal){
   const r=realFor(hc,ac); if(!r||r.st==="pre")return "";
