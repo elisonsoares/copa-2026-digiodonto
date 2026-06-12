@@ -140,6 +140,25 @@
   .kside.locked{cursor:default}
   .kside.locked:hover{background:transparent}
   .kside.locked.win:hover{background:rgba(92,224,210,.16)}
+  /* Placar de aproveitamento */
+  .scorebar{background:linear-gradient(135deg,rgba(92,224,210,.1),rgba(61,126,120,.12));
+    border:1px solid var(--dark-4); border-radius:var(--radius); padding:14px 18px; margin-bottom:18px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .scorebar .sb-title{font-family:'DM Sans',sans-serif; font-weight:800; font-size:15px; display:flex; align-items:center; gap:8px}
+  .scorebar .sb-title .cyan{color:var(--cyan)}
+  .scorebar .sb-tiles{display:flex; gap:10px; flex-wrap:wrap; margin-left:auto}
+  .sb-tile{background:var(--dark-1); border:1px solid var(--dark-4); border-radius:var(--radius-sm);
+    padding:8px 14px; text-align:center; min-width:78px}
+  .sb-tile .n{font-family:'DM Sans',sans-serif; font-weight:800; font-size:20px; line-height:1}
+  .sb-tile .l{font-size:9.5px; color:var(--gray); text-transform:uppercase; letter-spacing:.4px; margin-top:3px}
+  .sb-tile.cravou .n{color:var(--cyan)}
+  .sb-tile.result .n{color:#9fe6dd}
+  .sb-tile.erro .n{color:var(--gray-light)}
+  .sb-tile.pts{background:var(--cyan); border-color:transparent}
+  .sb-tile.pts .n{color:var(--dark-1)}
+  .sb-tile.pts .l{color:rgba(10,11,14,.7); font-weight:700}
+  .scorebar .sb-empty{color:var(--gray-light); font-size:13px}
+  @media(max-width:620px){ .scorebar .sb-tiles{margin-left:0; width:100%} .sb-tile{flex:1; min-width:0} }
 
   /* 3º COLOCADOS */
   .third-wrap{background:var(--dark-3); border:1px solid var(--dark-4); border-radius:var(--radius);
@@ -216,6 +235,8 @@
     <button class="btn" id="btn-import"><i data-lucide="upload"></i> Importar</button>
     <button class="btn danger" id="btn-reset"><i data-lucide="trash-2"></i> Limpar tudo</button>
   </div>
+
+  <div class="scorebar" id="scorebar"></div>
 
   <section class="view active" id="view-grupos">
     <div class="groups" id="groups"></div>
@@ -481,6 +502,7 @@ function renderGroups(){
       save(); renderGroups_soft();
     });
   });
+  renderScorebar();
 }
 let focusKey=null;
 function renderGroups_soft(){
@@ -658,6 +680,39 @@ function realLineHTML(hc,ac,pal){
     else acc=`<span class="chip erro">Errou</span>`;
   }
   return `<div class="realline"><span class="rlabel">Real</span><span class="rscore">${sc}</span>${chip}${acc}</div>`;
+}
+
+/* ============ PLACAR DE APROVEITAMENTO (fase de grupos) ============ */
+// Pontos: placar exato = 10 · acertou o resultado = 5
+function computeStats(){
+  let cravadas=0,resultado=0,erros=0,avaliados=0,pts=0;
+  GM.forEach(m=>{
+    const r=realFor(m[4],m[5]); if(!r||r.st!=="post")return;
+    const p=gScore(m[0]); if(p.h===""||p.a==="")return;
+    avaliados++;
+    if(+p.h===+r.hs && +p.a===+r.as){cravadas++;pts+=10;}
+    else if(Math.sign(+p.h-+p.a)===Math.sign(+r.hs-+r.as)){resultado++;pts+=5;}
+    else erros++;
+  });
+  return {cravadas,resultado,erros,avaliados,pts};
+}
+function renderScorebar(){
+  const el=document.getElementById("scorebar"); if(!el)return;
+  const s=computeStats();
+  if(s.avaliados===0){
+    el.innerHTML=`<div class="sb-title">🎯 <span>Seu aproveitamento</span></div>
+      <div class="sb-empty">Preencha seus palpites — seus acertos aparecem aqui assim que os jogos terminarem.</div>`;
+    return;
+  }
+  const aprov=Math.round((s.cravadas+s.resultado)/s.avaliados*100);
+  el.innerHTML=`<div class="sb-title">🎯 <span>Seu aproveitamento</span> <span class="cyan">${aprov}%</span></div>
+    <div class="sb-tiles">
+      <div class="sb-tile cravou"><div class="n">${s.cravadas}</div><div class="l">Cravadas</div></div>
+      <div class="sb-tile result"><div class="n">${s.resultado}</div><div class="l">Resultados</div></div>
+      <div class="sb-tile erro"><div class="n">${s.erros}</div><div class="l">Erros</div></div>
+      <div class="sb-tile"><div class="n">${s.avaliados}</div><div class="l">Avaliados</div></div>
+      <div class="sb-tile pts"><div class="n">${s.pts}</div><div class="l">Pontos</div></div>
+    </div>`;
 }
 
 /* ====================== INIT ====================== */
