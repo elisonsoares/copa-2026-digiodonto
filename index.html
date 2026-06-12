@@ -686,14 +686,17 @@ function realLineHTML(hc,ac,pal){
 // Pontos: placar exato = 10 · acertou o resultado = 5
 function computeStats(){
   let cravadas=0,resultado=0,erros=0,avaliados=0,pts=0;
-  GM.forEach(m=>{
-    const r=realFor(m[4],m[5]); if(!r||r.st!=="post")return;
-    const p=gScore(m[0]); if(p.h===""||p.a==="")return;
+  const tally=(p,r)=>{
+    if(!p||p.h===""||p.a===""||p.h==null||p.a==null)return;
     avaliados++;
     if(+p.h===+r.hs && +p.a===+r.as){cravadas++;pts+=10;}
     else if(Math.sign(+p.h-+p.a)===Math.sign(+r.hs-+r.as)){resultado++;pts+=5;}
     else erros++;
-  });
+  };
+  // Fase de grupos
+  GM.forEach(m=>{ const r=realFor(m[4],m[5]); if(r&&r.st==="post") tally(gScore(m[0]),r); });
+  // Mata-mata (comparação por confronto/slot)
+  Object.values(ALLKO).forEach(m=>{ const r=realFor(resolveRef(m.h),resolveRef(m.a)); if(r&&r.st==="post") tally(kRes(m.id),r); });
   return {cravadas,resultado,erros,avaliados,pts};
 }
 function renderScorebar(){
