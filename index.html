@@ -233,6 +233,7 @@
     <button class="btn primary" id="btn-refresh"><i data-lucide="refresh-cw"></i> Atualizar resultados</button>
     <button class="btn" id="btn-export"><i data-lucide="download"></i> Exportar</button>
     <button class="btn" id="btn-import"><i data-lucide="upload"></i> Importar</button>
+    <button class="btn" id="btn-restore"><i data-lucide="rotate-ccw"></i> Restaurar</button>
     <button class="btn danger" id="btn-reset"><i data-lucide="trash-2"></i> Limpar tudo</button>
   </div>
 
@@ -372,9 +373,15 @@ const FINAL = {id:104,d:"19/7",t:"16h",h:{m:101},a:{m:102}};
 
 /* ============================ ESTADO ============================ */
 const LS="cdm2026_digiodonto_v1";
+const BAK=LS+"_bak"; // backup automático do último estado com palpites
 let S = load();
 function load(){ try{return JSON.parse(localStorage.getItem(LS))||{g:{},k:{}}}catch(e){return{g:{},k:{}}} }
-function save(){ localStorage.setItem(LS,JSON.stringify(S)); }
+function hasData(o){ return !!(o && ((o.g&&Object.keys(o.g).length)||(o.k&&Object.keys(o.k).length))); }
+function save(){
+  localStorage.setItem(LS,JSON.stringify(S));
+  // só faz backup quando há palpites — assim um "Limpar tudo" não apaga o backup
+  try{ if(hasData(S)) localStorage.setItem(BAK,JSON.stringify(S)); }catch(e){}
+}
 function gScore(id){ return S.g[id]||{h:"",a:""}; }
 function kRes(id){ return S.k[id]||{h:"",a:"",w:null}; }
 
@@ -615,7 +622,18 @@ document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
   document.getElementById("view-"+t.dataset.view).classList.add("active");
 }));
 document.getElementById("btn-reset").addEventListener("click",()=>{
-  if(confirm("Apagar todos os placares preenchidos?")){ S={g:{},k:{}}; save(); renderGroups(); renderThirds(); renderBracket(); }
+  if(!hasData(S)){ alert("Não há palpites para limpar."); return; }
+  if(!confirm("⚠️ Isso vai APAGAR TODOS os seus palpites (inclusive de jogos já realizados).\n\nUm backup automático será mantido — dá pra restaurar depois no botão \"Restaurar\".\n\nDeseja continuar?")) return;
+  if(!confirm("Tem certeza mesmo? Esta ação não pode ser desfeita facilmente.")) return;
+  S={g:{},k:{}}; localStorage.setItem(LS,JSON.stringify(S)); // não chama save() p/ preservar o backup
+  renderGroups(); renderThirds(); renderBracket();
+});
+document.getElementById("btn-restore").addEventListener("click",()=>{
+  let bak=null; try{ bak=JSON.parse(localStorage.getItem(BAK)); }catch(e){}
+  if(!hasData(bak)){ alert("Não há backup de palpites para restaurar."); return; }
+  if(!confirm("Restaurar seus palpites do último backup automático?\nIsso substitui o que estiver preenchido agora.")) return;
+  S=bak; save(); renderGroups(); renderThirds(); renderBracket();
+  alert("✅ Palpites restaurados!");
 });
 document.getElementById("btn-export").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(S)],{type:"application/json"});
