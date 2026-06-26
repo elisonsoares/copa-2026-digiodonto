@@ -302,30 +302,30 @@ const T = {
 };
 
 const GROUPS = {
-  A:["MEX","RSA","COR","CZE"], B:["CAN","BIH","QAT","SUI"], C:["USA","PAR","AUS","TUR"],
-  D:["BRA","MAR","HAI","SCO"], E:["ALE","CUW","CIV","ECU"], F:["NED","JPN","SWE","TUN"],
-  G:["ESP","CPV","KSA","URU"], H:["BEL","EGY","IRN","NZL"], I:["FRA","SEN","IRQ","NOR"],
+  A:["MEX","RSA","COR","CZE"], B:["CAN","BIH","QAT","SUI"], C:["BRA","MAR","HAI","SCO"],
+  D:["USA","PAR","AUS","TUR"], E:["ALE","CUW","CIV","ECU"], F:["NED","JPN","SWE","TUN"],
+  G:["BEL","EGY","IRN","NZL"], H:["ESP","CPV","KSA","URU"], I:["FRA","SEN","IRQ","NOR"],
   J:["ARG","ALG","AUT","JOR"], K:["POR","COD","UZB","COL"], L:["ENG","CRO","GHA","PAN"],
 };
 
 // Jogos da fase de grupos (ordem do calendário). id, data, hora, grupo, mandante, visitante
 const GM = [
   ["g1","QUI 11/6","16h","A","MEX","RSA"],["g2","QUI 11/6","23h","A","COR","CZE"],
-  ["g3","SEX 12/6","16h","B","CAN","BIH"],["g4","SEX 12/6","22h","C","USA","PAR"],
-  ["g5","SÁB 13/6","16h","B","QAT","SUI"],["g6","SÁB 13/6","19h","D","BRA","MAR"],["g7","SÁB 13/6","22h","D","HAI","SCO"],["g8","SÁB 13/6","01h","C","AUS","TUR"],
+  ["g3","SEX 12/6","16h","B","CAN","BIH"],["g4","SEX 12/6","22h","D","USA","PAR"],
+  ["g5","SÁB 13/6","16h","B","QAT","SUI"],["g6","SÁB 13/6","19h","C","BRA","MAR"],["g7","SÁB 13/6","22h","C","HAI","SCO"],["g8","SÁB 13/6","01h","D","AUS","TUR"],
   ["g9","DOM 14/6","14h","E","ALE","CUW"],["g10","DOM 14/6","17h","F","NED","JPN"],["g11","DOM 14/6","20h","E","CIV","ECU"],["g12","DOM 14/6","23h","F","SWE","TUN"],
-  ["g13","SEG 15/6","13h","G","ESP","CPV"],["g14","SEG 15/6","16h","H","BEL","EGY"],["g15","SEG 15/6","19h","G","KSA","URU"],["g16","SEG 15/6","22h","H","IRN","NZL"],
+  ["g13","SEG 15/6","13h","H","ESP","CPV"],["g14","SEG 15/6","16h","G","BEL","EGY"],["g15","SEG 15/6","19h","H","KSA","URU"],["g16","SEG 15/6","22h","G","IRN","NZL"],
   ["g17","TER 16/6","16h","I","FRA","SEN"],["g18","TER 16/6","19h","I","IRQ","NOR"],["g19","TER 16/6","22h","J","ARG","ALG"],["g20","TER 16/6","01h","J","AUT","JOR"],
   ["g21","QUA 17/6","14h","K","POR","COD"],["g22","QUA 17/6","17h","L","ENG","CRO"],["g23","QUA 17/6","20h","L","GHA","PAN"],["g24","QUA 17/6","23h","K","UZB","COL"],
   ["g25","QUI 18/6","13h","A","CZE","RSA"],["g26","QUI 18/6","16h","B","SUI","BIH"],["g27","QUI 18/6","19h","B","CAN","QAT"],["g28","QUI 18/6","22h","A","MEX","COR"],
-  ["g29","SEX 19/6","16h","C","USA","AUS"],["g30","SEX 19/6","19h","D","SCO","MAR"],["g31","SEX 19/6","21h30","D","BRA","HAI"],["g32","SEX 19/6","00h","C","TUR","PAR"],
+  ["g29","SEX 19/6","16h","D","USA","AUS"],["g30","SEX 19/6","19h","C","SCO","MAR"],["g31","SEX 19/6","21h30","C","BRA","HAI"],["g32","SEX 19/6","00h","D","TUR","PAR"],
   ["g33","SÁB 20/6","14h","F","NED","SWE"],["g34","SÁB 20/6","17h","E","ALE","CIV"],["g35","SÁB 20/6","21h","E","ECU","CUW"],["g36","SÁB 20/6","01h","F","TUN","JPN"],
-  ["g37","DOM 21/6","13h","G","ESP","KSA"],["g38","DOM 21/6","16h","H","BEL","IRN"],["g39","DOM 21/6","19h","G","URU","CPV"],["g40","DOM 21/6","22h","H","NZL","EGY"],
+  ["g37","DOM 21/6","13h","H","ESP","KSA"],["g38","DOM 21/6","16h","G","BEL","IRN"],["g39","DOM 21/6","19h","H","URU","CPV"],["g40","DOM 21/6","22h","G","NZL","EGY"],
   ["g41","SEG 22/6","14h","J","ARG","AUT"],["g42","SEG 22/6","18h","I","FRA","IRQ"],["g43","SEG 22/6","21h","I","NOR","SEN"],["g44","SEG 22/6","00h","J","JOR","ALG"],
   ["g45","TER 23/6","14h","K","POR","UZB"],["g46","TER 23/6","17h","L","ENG","GHA"],["g47","TER 23/6","20h","L","PAN","CRO"],["g48","TER 23/6","23h","K","COL","COD"],
-  ["g49","QUA 24/6","16h","B","SUI","CAN"],["g50","QUA 24/6","16h","B","BIH","QAT"],["g51","QUA 24/6","19h","D","MAR","HAI"],["g52","QUA 24/6","19h","D","SCO","BRA"],["g53","QUA 24/6","22h","A","RSA","COR"],["g54","QUA 24/6","22h","A","CZE","MEX"],
-  ["g55","QUI 25/6","17h","E","CUW","CIV"],["g56","QUI 25/6","17h","E","ECU","ALE"],["g57","QUI 25/6","20h","F","TUN","NED"],["g58","QUI 25/6","20h","F","JPN","SWE"],["g59","QUI 25/6","23h","C","TUR","USA"],["g60","QUI 25/6","23h","C","PAR","AUS"],
-  ["g61","SEX 26/6","16h","I","NOR","FRA"],["g62","SEX 26/6","16h","I","SEN","IRQ"],["g63","SEX 26/6","21h","G","CPV","KSA"],["g64","SEX 26/6","21h","G","URU","ESP"],["g65","SEX 26/6","00h","H","NZL","BEL"],["g66","SEX 26/6","00h","H","EGY","IRN"],
+  ["g49","QUA 24/6","16h","B","SUI","CAN"],["g50","QUA 24/6","16h","B","BIH","QAT"],["g51","QUA 24/6","19h","C","MAR","HAI"],["g52","QUA 24/6","19h","C","SCO","BRA"],["g53","QUA 24/6","22h","A","RSA","COR"],["g54","QUA 24/6","22h","A","CZE","MEX"],
+  ["g55","QUI 25/6","17h","E","CUW","CIV"],["g56","QUI 25/6","17h","E","ECU","ALE"],["g57","QUI 25/6","20h","F","TUN","NED"],["g58","QUI 25/6","20h","F","JPN","SWE"],["g59","QUI 25/6","23h","D","TUR","USA"],["g60","QUI 25/6","23h","D","PAR","AUS"],
+  ["g61","SEX 26/6","16h","I","NOR","FRA"],["g62","SEX 26/6","16h","I","SEN","IRQ"],["g63","SEX 26/6","21h","H","CPV","KSA"],["g64","SEX 26/6","21h","H","URU","ESP"],["g65","SEX 26/6","00h","G","NZL","BEL"],["g66","SEX 26/6","00h","G","EGY","IRN"],
   ["g67","SÁB 27/6","18h","L","PAN","ENG"],["g68","SÁB 27/6","18h","L","CRO","GHA"],["g69","SÁB 27/6","20h30","K","COL","POR"],["g70","SÁB 27/6","20h30","K","COD","UZB"],["g71","SÁB 27/6","23h","J","ALG","AUT"],["g72","SÁB 27/6","23h","J","JOR","ARG"],
 ];
 
