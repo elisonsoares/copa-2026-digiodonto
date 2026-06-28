@@ -419,10 +419,17 @@ function qualifiedThirdGroups(){
   if(!Object.keys(GROUPS).every(groupComplete)) return null;
   return thirdRanking().slice(0,8).map(r=>r.g);
 }
-// Distribui os 8 grupos classificados nos 8 confrontos respeitando a elegibilidade FIFA (matching).
+// Alocação OFICIAL da FIFA (Anexo C) para combinações conhecidas de 3º colocados.
+// Chave = grupos dos 8 melhores 3º em ordem alfabética. Esta Copa: B,D,E,F,I,J,K,L.
+const THIRD_FIXED = {
+  "B,D,E,F,I,J,K,L": {74:"D",77:"F",79:"E",80:"K",81:"B",82:"I",85:"J",87:"L"}
+};
+// Distribui os 8 grupos classificados nos 8 confrontos respeitando a elegibilidade FIFA.
 function assignThirds(){
   const groups = qualifiedThirdGroups();
   if(!groups) return null;
+  const fixed = THIRD_FIXED[groups.slice().sort().join(",")];
+  if(fixed) return fixed; // usa a tabela oficial quando a combinação é conhecida
   const slots = Object.keys(THIRD_SLOTS).map(Number);
   const set = new Set(groups);
   const cand = {}; slots.forEach(s=> cand[s]=THIRD_SLOTS[s].filter(g=>set.has(g)));
